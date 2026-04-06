@@ -1,0 +1,24 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+.env/
+
+# Environment variables (IMPORTANT)
+.env
+
+# Database files (SQLite)
+*.db
+
+# ML models (optional - if large)
+*.pkl
+*.joblib
+
+# Streamlit cache
+.streamlit/
+
+# OS files
+.DS_Store
+Thumbs.db
