@@ -15,7 +15,7 @@ def show():
     
     st.markdown("""
     <div class="main-header">
-        <h1>🎉 Your Fitness Category</h1>
+        <h1> Your Fitness Category</h1>
         <p>Based on your comprehensive fitness profile analysis</p>
     </div>
     """, unsafe_allow_html=True)
@@ -26,17 +26,17 @@ def show():
     with col2:
         st.markdown(f"""
         <div class="result-card">
-            <h2>📊 Your Category: Cluster {result['cluster']}</h2>
+            <h2> Your Category: Cluster {result['cluster']}</h2>
             <p>{result['interpretation']['description']}</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Recommendations Section
-        st.markdown("### 💪 Personalized Recommendations")
+        st.markdown("###  Personalized Recommendations")
         
         st.markdown("""
         <div class="feature-card">
-            <h3>🥗 Diet Recommendations</h3>
+            <h3> Diet Recommendations</h3>
         """, unsafe_allow_html=True)
         
         for rec in result['interpretation']['diet_recommendations']:
@@ -48,7 +48,7 @@ def show():
         
         st.markdown("""
         <div class="feature-card">
-            <h3>🏋️ Workout Recommendations</h3>
+            <h3> Workout Recommendations</h3>
         """, unsafe_allow_html=True)
         
         for rec in result['interpretation']['workout_recommendations']:
@@ -62,7 +62,7 @@ def show():
         if 'insights' in result['interpretation']:
             st.markdown("""
             <div class="feature-card">
-                <h3>💡 Key Insights</h3>
+                <h3> Key Insights</h3>
             """, unsafe_allow_html=True)
             
             for insight in result['interpretation']['insights']:
@@ -160,6 +160,6 @@ def show():
     # Footer
     st.markdown("""
     <div class="footer">
-        Developed by Akshat with <span>❤️</span>
+        Developed by Akshat <span>❤️</span>
     </div>
     """, unsafe_allow_html=True)

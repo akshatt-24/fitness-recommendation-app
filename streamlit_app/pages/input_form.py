@@ -257,7 +257,7 @@ def show():
         
         with col2:
             submitted = st.form_submit_button(
-                "🎯 Get My Results",
+                " Get My Results",
                 use_container_width=True
             )
         
@@ -321,6 +321,6 @@ def show():
     # Footer
     st.markdown("""
     <div class="footer">
-        Developed by Akshat with <span>❤️</span>
+        Developed by Akshat <span>❤️</span>
     </div>
     """, unsafe_allow_html=True)

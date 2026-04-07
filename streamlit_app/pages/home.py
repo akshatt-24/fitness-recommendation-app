@@ -4,7 +4,7 @@ def show():
     # Header
     st.markdown("""
     <div class="main-header">
-        <h1>💪 Fitness Categorization</h1>
+        <h1> Fitness Categorization</h1>
         <p>Diet and Workout Recommendation System</p>
     </div>
     """, unsafe_allow_html=True)
@@ -25,7 +25,7 @@ def show():
         # What We Do Section
         st.markdown("""
         <div class="feature-card">
-            <h3>🎯 What We Do</h3>
+            <h3> What We Do</h3>
             <p>
                 This application uses <strong>Agglomerative Hierarchical Clustering</strong> to analyze your fitness profile 
                 and place you into a specific fitness category. Based on your category, you'll receive personalized 
@@ -44,7 +44,7 @@ def show():
     with col1:
         st.markdown("""
         <div class="feature-card">
-            <h3>📊 Comprehensive Analysis</h3>
+            <h3> Comprehensive Analysis</h3>
             <p>
                 We evaluate 20+ lifestyle and fitness parameters including exercise habits, 
                 nutrition, sleep patterns, and daily activity levels.
@@ -55,7 +55,7 @@ def show():
     with col2:
         st.markdown("""
         <div class="feature-card">
-            <h3>🤖 ML-Powered Insights</h3>
+            <h3> ML-Powered Insights</h3>
             <p>
                 Our trained clustering algorithm identifies patterns in your data to provide 
                 accurate fitness categorization and actionable recommendations.
@@ -66,7 +66,7 @@ def show():
     with col3:
         st.markdown("""
         <div class="feature-card">
-            <h3>💡 Personalized Results</h3>
+            <h3> Personalized Results</h3>
             <p>
                 Get customized diet plans and workout routines based on your unique fitness 
                 profile and category assignment.
@@ -81,7 +81,7 @@ def show():
     with col2:
         st.markdown("""
         <div class="feature-card">
-            <h3>🎯 Our Objective</h3>
+            <h3> Our Objective</h3>
             <p>
                 ✅ Accurately categorize your fitness level<br>
                 ✅ Provide data-driven health insights<br>
@@ -95,13 +95,13 @@ def show():
         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
         
         # Get Started Button
-        if st.button("🚀 Get Started", key="get_started_btn", use_container_width=True):
+        if st.button(" Get Started", key="get_started_btn", use_container_width=True):
             st.session_state.page = 'input'
             st.rerun()
     
     # Footer
     st.markdown("""
     <div class="footer">
-        Developed by Akshat with <span>❤️</span>
+        Developed by Akshat <span>❤️</span>
     </div>
     """, unsafe_allow_html=True)
