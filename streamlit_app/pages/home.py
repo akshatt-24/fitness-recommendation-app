@@ -1,107 +1,101 @@
-import streamlit as st
+"""
+home.py
+─────────────────────────────────────────────────────────────────────────────
+Landing page. Introduces the application and routes to the input form.
+All styling is sourced from styles.py / config.toml.
+─────────────────────────────────────────────────────────────────────────────
+"""
 
-def show():
-    # Header
+import streamlit as st
+from utils.styles import inject_global_css
+
+
+def show() -> None:
+    inject_global_css()
+
+    # Page header
     st.markdown("""
-    <div class="main-header">
-        <h1> Fitness Categorization</h1>
+    <div class="page-header">
+        <h1>Fitness Categorization</h1>
         <p>Diet and Workout Recommendation System</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    
+
     # Introduction
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
         st.markdown("""
-        ### Welcome to Your Personalized Fitness Journey
-        
-        Our advanced machine learning system analyzes your lifestyle, habits, and fitness metrics to categorize your current fitness level and provide tailored recommendations.
-        """)
-        
-        st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
-        
-        # What We Do Section
-        st.markdown("""
-        <div class="feature-card">
-            <h3> What We Do</h3>
+        <div class="card">
+            <h3>What This System Does</h3>
             <p>
-                This application uses <strong>Agglomerative Hierarchical Clustering</strong> to analyze your fitness profile 
-                and place you into a specific fitness category. Based on your category, you'll receive personalized 
-                diet and workout recommendations designed to help you achieve your health goals.
+                This application uses <strong>Agglomerative Hierarchical Clustering</strong> to
+                analyse your fitness profile across 20+ lifestyle parameters and assign you to
+                one of five fitness categories. Each category comes with targeted diet,
+                exercise, and lifestyle recommendations derived directly from the model.
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
-    
-    # Features Grid
-    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
+
+    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+
+    # Feature highlights
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
         st.markdown("""
-        <div class="feature-card">
-            <h3> Comprehensive Analysis</h3>
+        <div class="card">
+            <h3>Comprehensive Input</h3>
             <p>
-                We evaluate 20+ lifestyle and fitness parameters including exercise habits, 
-                nutrition, sleep patterns, and daily activity levels.
+                We evaluate exercise habits, nutrition, sleep patterns, sedentary behaviour,
+                lifestyle risk factors, and subjective energy levels.
             </p>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
+
+    with c2:
         st.markdown("""
-        <div class="feature-card">
-            <h3> ML-Powered Insights</h3>
+        <div class="card">
+            <h3>ML-Powered Analysis</h3>
             <p>
-                Our trained clustering algorithm identifies patterns in your data to provide 
-                accurate fitness categorization and actionable recommendations.
+                A trained clustering model identifies your fitness profile and assigns you
+                to the nearest centroid across seven composite health scores.
             </p>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col3:
+
+    with c3:
         st.markdown("""
-        <div class="feature-card">
-            <h3> Personalized Results</h3>
+        <div class="card">
+            <h3>Actionable Output</h3>
             <p>
-                Get customized diet plans and workout routines based on your unique fitness 
-                profile and category assignment.
+                Recommendations are category-specific and prioritised so you know exactly
+                which area to address first for the fastest improvement.
             </p>
         </div>
         """, unsafe_allow_html=True)
-    
-    st.markdown("<div style='height: 3rem;'></div>", unsafe_allow_html=True)
-    
+
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+
     # Objectives
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
         st.markdown("""
-        <div class="feature-card">
-            <h3> Our Objective</h3>
-            <p>
-                ✅ Accurately categorize your fitness level<br>
-                ✅ Provide data-driven health insights<br>
-                ✅ Recommend personalized diet and workout plans<br>
-                ✅ Help you make informed decisions about your health journey<br>
-                ✅ Continuously improve recommendations based on user feedback
-            </p>
+        <div class="card">
+            <h3>Objectives</h3>
+            <p>Accurately categorise your current fitness level</p>
+            <p>Provide data-driven health insights from model scores</p>
+            <p>Deliver prioritised diet, exercise, and lifestyle plans</p>
+            <p>Support informed, evidence-based health decisions</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
-        
-        # Get Started Button
-        if st.button(" Get Started", key="get_started_btn", use_container_width=True):
-            st.session_state.page = 'input'
+
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+
+        if st.button("Get Started", key="get_started_btn", use_container_width=True):
+            st.session_state.page = "input"
             st.rerun()
-    
+
     # Footer
     st.markdown("""
-    <div class="footer">
-        Developed by Akshat <span>❤️</span>
-    </div>
+    <div class="footer"><strong>Developed by Akshat 🩵</strong></div>
     """, unsafe_allow_html=True)

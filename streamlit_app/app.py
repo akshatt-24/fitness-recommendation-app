@@ -186,13 +186,26 @@ def navigate_to(page):
     st.session_state.page = page
     st.rerun()
 
-# Import pages
-# from app.streamlit_app.pages import results
+try:
+    from pages import home, input_form, results
+except ImportError as e:
+    st.error("\"Error importing pages: {e}\"")
+    st.info("\"Please make sure all page files exist in the 'pages' folder\"")
+    st.stop()
 
 # Page routing
-if st.session_state.page == 'home':
-    home.show()
-elif st.session_state.page == 'input':
-    input_form.show()
-elif st.session_state.page == 'results':
-    results.show()
+try:
+    if st.session_state.page == 'home':
+        home.show()
+    elif st.session_state.page == 'input':
+        input_form.show()
+    elif st.session_state.page == 'results':
+        results.show()
+except AttributeError as e:
+    st.error("\"Error loading page: {e}\"")
+    st.info("\"Trying to reload the application...\"")
+    # Clear cache and retry
+    import importlib
+    importlib.reload(home)
+    importlib.reload(input_form)
+    importlib.reload(results)

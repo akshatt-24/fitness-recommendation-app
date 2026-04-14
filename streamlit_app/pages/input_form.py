@@ -1,326 +1,331 @@
+"""
+input_form.py
+─────────────────────────────────────────────────────────────────────────────
+User input form. Collects all survey fields and passes them to
+model_loader.predict_cluster() using short form keys.
+
+Key contract (must match model_loader.py section 2 and 3):
+    gender, height (int cm), weight (int kg), step_count, exercise_days,
+    workout_duration, workout_type (joined str), sleep_hours, screen_time,
+    sitting_time, alcohol, smoke, stress_level, junk_food, water_intake,
+    fruit_veg, calories, protein_level, food_order_freq, energetic,
+    fatigue, fitness_rating
+
+Multi-select workout_type is joined to a comma-separated string so that
+model_loader's substring checks ("Gym", "Cardio", "Sports", etc.) work
+on combined selections.
+─────────────────────────────────────────────────────────────────────────────
+"""
+
 import streamlit as st
-# from app.streamlit_app.utils.model_loader import load_model, predict_cluster
-from utils.model_loader import load_model, predict_cluster
+from utils.styles import inject_global_css
+from utils.model_loader import predict_cluster
 
-from datetime import datetime
 
-def show():
+# ── Option sets ───────────────────────────────────────────────────────────────
+# Every option string must contain the substring that model_loader's maps expect.
+
+GENDER_OPTS = ["Male", "Female", "Other"]
+
+HEIGHT_OPTS = [
+    "Less than 150 cm",
+    "150 - 160 cm",
+    "160 - 170 cm",
+    "170 - 180 cm",
+    "180 - 190 cm",
+    "190 cm or above",
+]
+HEIGHT_MID = {
+    "Less than 150 cm" : 145,
+    "150 - 160 cm"     : 155,
+    "160 - 170 cm"     : 165,
+    "170 - 180 cm"     : 175,
+    "180 - 190 cm"     : 185,
+    "190 cm or above"  : 193,
+}
+
+WEIGHT_OPTS = [
+    "Less than 50 kg",
+    "50 - 65 kg",
+    "65 - 80 kg",
+    "80 - 95 kg",
+    "95 - 110 kg",
+    "More than 110 kg",
+]
+WEIGHT_MID = {
+    "Less than 50 kg"  : 45,
+    "50 - 65 kg"       : 57,
+    "65 - 80 kg"       : 72,
+    "80 - 95 kg"       : 87,
+    "95 - 110 kg"      : 102,
+    "More than 110 kg" : 115,
+}
+
+# Step options — values contain substrings matched by model_loader step map keys.
+STEP_OPTS = ["Less than 3000", "3000 - 6000", "6000-10000", "10000+"]
+
+# Exercise days — values must match model_loader exercise_days map keys exactly.
+EXERCISE_DAY_OPTS = ["0 days", "1-2", "3-4", "5+"]
+
+# Duration — values must match model_loader duration map keys exactly.
+DURATION_OPTS = ["0", "15-30", "30-60", "60+"]
+
+# Workout options — values must contain substrings model_loader checks:
+# "Gym", "Cardio" or "Running", "Sports", "Yoga" or "Stretching", "none".
+WORKOUT_OPTS = [
+    "Gym",
+    "Cardio / Running",
+    "Sports",
+    "Yoga / Stretching",
+    "none",
+]
+
+# Sleep — values must match model_loader sleep_map keys exactly.
+SLEEP_OPTS = [
+    "Less than 5 hours",
+    "5-6 hours",
+    "6-8 hours",
+    "8+ hours",
+]
+
+# Screen time — must match model_loader screen_map keys exactly.
+SCREEN_OPTS = [
+    "Less than 3 hours",
+    "3-5 hours",
+    "5-7 hours",
+    "7+ hours",
+]
+
+# Sitting — must match model_loader sitting_map keys exactly.
+SITTING_OPTS = [
+    "Less than 4 hours",
+    "4-6 hours",
+    "6-8 hours",
+    "8+ hours",
+]
+
+ALCOHOL_OPTS  = ["Never", "Occasionally", "Regularly"]
+SMOKE_OPTS    = ["No", "Yes"]
+STRESS_OPTS   = ["Very low", "Moderate", "High", "Very High"]
+
+# Junk — must contain substrings: "Rarely", "1-2 times", "3-4 times", "Almost daily"
+JUNK_OPTS = [
+    "Rarely (once a month or less)",
+    "1-2 times a week",
+    "3-4 times a week",
+    "Almost daily",
+]
+
+# Water — must match model_loader water_map keys exactly.
+WATER_OPTS = ["1-2 liters", "2-3 liters", "more than 3 liters"]
+
+# Fruit/veg — must match model_loader fv_map keys exactly.
+FRUIT_VEG_OPTS = ["0 servings", "1 serving", "2-3 servings", "3+ servings"]
+
+# Calories — must match model_loader cal_map keys exactly.
+CALORIE_OPTS = [
+    "less than 1800 kcal",
+    "1800 - 2200 kcal",
+    "2200 - 2600 kcal",
+    "2600+ kcal",
+    "not sure",
+]
+
+PROTEIN_OPTS = ["Low", "Moderate", "High"]
+
+# Order — must contain substrings: "rarely", "1-2 times", "3-4 times", "5+ times"
+ORDER_OPTS = [
+    "rarely (once a month or less)",
+    "1-2 times a week",
+    "3-4 times a week",
+    "5+ times a week",
+]
+
+# Energy / fatigue — must match model_loader maps exactly (lowercase).
+ENERGY_OPTS  = ["never", "occasionally", "frequently", "always"]
+FATIGUE_OPTS = ["never", "occasionally", "frequently", "always"]
+
+# Fitness self-rating — must match model_loader fitness_map keys exactly.
+FITNESS_OPTS = [
+    "Poor (1-2)",
+    "Average (3-5)",
+    "Good (6-7)",
+    "Excellent (8-10)",
+]
+
+
+# ── Rendering helpers ─────────────────────────────────────────────────────────
+
+def _section(label: str) -> None:
+    st.markdown(f'<div class="section-label">{label}</div>', unsafe_allow_html=True)
+
+
+def _radio(label: str, options: list, key: str, horizontal: bool = False) -> str:
+    return st.radio(label, options, key=key, horizontal=horizontal)
+
+
+def _multiselect(label: str, options: list, key: str) -> list:
+    return st.multiselect(label, options, key=key)
+
+
+# ── Main page ─────────────────────────────────────────────────────────────────
+
+def show() -> None:
+    inject_global_css()
+
     st.markdown("""
-    <div class="main-header">
-        <h1>📝 Your Fitness Profile</h1>
-        <p>Please fill in your details accurately for best results</p>
+    <div class="page-header">
+        <h1>Your Fitness Profile</h1>
+        <p>Answer each question accurately — results depend on honest input.</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Create form
+
     with st.form("fitness_form"):
-        st.markdown("### Personal Information")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            gender = st.selectbox(
-                "What is your gender?",
-                options=["Male", "Female", "Other"],
-                key="gender"
-            )
-        
-        with col2:
-            height = st.number_input(
-                "What is your height (in cm)?",
-                min_value=100,
-                max_value=250,
-                value=170,
-                step=1,
-                key="height"
-            )
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            weight = st.number_input(
-                "What is your weight (in kg)?",
-                min_value=30,
-                max_value=200,
-                value=70,
-                step=1,
-                key="weight"
-            )
-        
-        with col2:
-            step_count = st.number_input(
-                "Average daily step count (approx)",
-                min_value=0,
-                max_value=50000,
-                value=5000,
-                step=100,
-                key="step_count"
-            )
-        
-        st.markdown("### Exercise & Activity")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            exercise_days = st.slider(
-                "How many days per week do you exercise?",
-                min_value=0,
-                max_value=7,
-                value=3,
-                key="exercise_days"
-            )
-        
-        with col2:
-            workout_duration = st.number_input(
-                "Average workout duration per day (in minutes)",
-                min_value=0,
-                max_value=300,
-                value=30,
-                step=5,
-                key="workout_duration"
-            )
-        
-        workout_type = st.selectbox(
-            "What type of workout you usually do?",
-            options=[
-                "Cardio",
-                "Strength Training",
-                "Yoga/Pilates",
-                "Sports",
-                "Mixed/Combination",
-                "None"
-            ],
-            key="workout_type"
+
+        # ── Section 1: Personal Information ──────────────────────────────────
+        _section("Personal Information")
+        c1, c2 = st.columns(2)
+        with c1:
+            gender = _radio("Gender", GENDER_OPTS, "gender", horizontal=True)
+        with c2:
+            height_bucket = _radio("Height", HEIGHT_OPTS, "height_bucket", horizontal=False)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            weight_bucket = _radio("Weight", WEIGHT_OPTS, "weight_bucket", horizontal=False)
+        with c2:
+            step_count = _radio("Average daily step count", STEP_OPTS, "step_count", horizontal=False)
+
+        # ── Section 2: Exercise & Activity ────────────────────────────────────
+        _section("Exercise & Activity")
+        c1, c2 = st.columns(2)
+        with c1:
+            exercise_days = _radio("Exercise days per week", EXERCISE_DAY_OPTS, "exercise_days", horizontal=False)
+        with c2:
+            workout_duration = _radio("Average workout duration per session", DURATION_OPTS, "workout_duration", horizontal=False)
+
+        # Multi-select: joined to a single string for substring-based scoring in model_loader.
+        workout_types = _multiselect(
+            "Workout type(s) — select all that apply",
+            WORKOUT_OPTS,
+            "workout_types",
         )
-        
-        st.markdown("### Sleep & Screen Time")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            sleep_hours = st.slider(
-                "Average sleep hours per day",
-                min_value=0.0,
-                max_value=12.0,
-                value=7.0,
-                step=0.5,
-                key="sleep_hours"
-            )
-        
-        with col2:
-            screen_time = st.number_input(
-                "Daily screen time (phone + laptop) in hours",
-                min_value=0.0,
-                max_value=24.0,
-                value=6.0,
-                step=0.5,
-                key="screen_time"
-            )
-        
-        sitting_time = st.number_input(
-            "Daily sitting time (hours)",
-            min_value=0.0,
-            max_value=24.0,
-            value=8.0,
-            step=0.5,
-            key="sitting_time"
+
+        # ── Section 3: Sleep & Sedentary Behaviour ────────────────────────────
+        _section("Sleep & Sedentary Behaviour")
+        c1, c2 = st.columns(2)
+        with c1:
+            sleep_hours = _radio("Average sleep per night", SLEEP_OPTS, "sleep_hours", horizontal=False)
+        with c2:
+            screen_time = _radio("Daily screen time (phone + laptop)", SCREEN_OPTS, "screen_time", horizontal=False)
+
+        sitting_time = _radio("Daily sitting time", SITTING_OPTS, "sitting_time", horizontal=True)
+
+        # ── Section 4: Lifestyle Habits ───────────────────────────────────────
+        _section("Lifestyle Habits")
+        c1, c2 = st.columns(2)
+        with c1:
+            alcohol = _radio("Alcohol consumption", ALCOHOL_OPTS, "alcohol", horizontal=True)
+        with c2:
+            smoke = _radio("Do you smoke?", SMOKE_OPTS, "smoke", horizontal=True)
+
+        stress_level = _radio("Daily workload / stress level", STRESS_OPTS, "stress_level", horizontal=True)
+
+        # ── Section 5: Nutrition ──────────────────────────────────────────────
+        _section("Nutrition")
+        junk_food = _radio(
+            "Junk food / packaged snacks frequency",
+            JUNK_OPTS, "junk_food", horizontal=True,
         )
-        
-        st.markdown("### Lifestyle Habits")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            alcohol = st.radio(
-                "Do you consume alcohol?",
-                options=["Yes", "No"],
-                key="alcohol",
-                horizontal=True
-            )
-        
-        with col2:
-            smoke = st.radio(
-                "Do you smoke?",
-                options=["Yes", "No"],
-                key="smoke",
-                horizontal=True
-            )
-        
-        stress_level = st.select_slider(
-            "Daily workload/stress level",
-            options=["Very Low", "Low", "Moderate", "High", "Very High"],
-            value="Moderate",
-            key="stress_level"
+
+        c1, c2 = st.columns(2)
+        with c1:
+            water_intake = _radio("Daily water intake", WATER_OPTS, "water_intake", horizontal=False)
+        with c2:
+            fruit_veg = _radio("Fruit / vegetable servings per day", FRUIT_VEG_OPTS, "fruit_veg", horizontal=False)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            calories = _radio("Average daily calorie intake", CALORIE_OPTS, "calories", horizontal=False)
+        with c2:
+            protein_level = _radio("Protein intake level", PROTEIN_OPTS, "protein_level", horizontal=False)
+
+        food_order_freq = _radio(
+            "Online food order frequency",
+            ORDER_OPTS, "food_order_freq", horizontal=True,
         )
-        
-        st.markdown("### Nutrition")
-        
-        junk_food = st.selectbox(
-            "Junk food consumption frequency (including packaged items like chips and cold drinks)",
-            options=[
-                "Rarely (once a month or less)",
-                "Occasionally (2-3 times a month)",
-                "Sometimes (once a week)",
-                "Often (2-3 times a week)",
-                "Very Often (daily or almost daily)"
-            ],
-            key="junk_food"
+
+        # ── Section 6: Health & Energy ────────────────────────────────────────
+        _section("Health & Energy")
+        c1, c2 = st.columns(2)
+        with c1:
+            energetic = _radio("How often do you feel energetic during the day?", ENERGY_OPTS, "energetic", horizontal=False)
+        with c2:
+            fatigue = _radio("How often do you experience fatigue?", FATIGUE_OPTS, "fatigue", horizontal=False)
+
+        fitness_rating = _radio(
+            "Overall fitness level (self-rated)",
+            FITNESS_OPTS, "fitness_rating", horizontal=True,
         )
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            water_intake = st.selectbox(
-                "Average water intake per day",
-                options=[
-                    "Less than 1 liter",
-                    "1-2 liters",
-                    "2-3 liters",
-                    "3-4 liters",
-                    "More than 4 liters"
-                ],
-                key="water_intake"
-            )
-        
-        with col2:
-            fruit_veg = st.number_input(
-                "Fruit/Vegetable servings per day",
-                min_value=0,
-                max_value=20,
-                value=3,
-                step=1,
-                key="fruit_veg"
-            )
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            calories = st.number_input(
-                "Average daily calories intake in kcal (approx)",
-                min_value=500,
-                max_value=6000,
-                value=2000,
-                step=50,
-                key="calories"
-            )
-        
-        with col2:
-            protein_level = st.selectbox(
-                "Protein intake level",
-                options=["Low", "Moderate", "High", "Very High"],
-                key="protein_level"
-            )
-        
-        food_order_freq = st.selectbox(
-            "Frequency of online food order (Swiggy, Zomato etc.)",
-            options=[
-                "Never",
-                "Rarely (once a month)",
-                "Sometimes (2-3 times a month)",
-                "Often (once a week)",
-                "Very Often (multiple times a week)"
-            ],
-            key="food_order_freq"
-        )
-        
-        st.markdown("### Health Assessment")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            energetic = st.radio(
-                "Do you feel energetic during the day?",
-                options=["Yes", "Sometimes", "No"],
-                key="energetic",
-                horizontal=True
-            )
-        
-        with col2:
-            fatigue = st.radio(
-                "Do you experience frequent fatigue?",
-                options=["Yes", "Sometimes", "No"],
-                key="fatigue",
-                horizontal=True
-            )
-        
-        fitness_rating = st.slider(
-            "How would you rate your overall fitness level?",
-            min_value=1,
-            max_value=10,
-            value=5,
-            key="fitness_rating",
-            help="1 = Very Poor, 10 = Excellent"
-        )
-        
-        st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 1, 1])
-        
-        with col2:
-            submitted = st.form_submit_button(
-                " Get My Results",
-                use_container_width=True
-            )
-        
+
+        # ── Submit ────────────────────────────────────────────────────────────
+        st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+        _, mid, _ = st.columns([1, 2, 1])
+        with mid:
+            submitted = st.form_submit_button("Get My Results", use_container_width=True)
+
         if submitted:
-            # Collect all inputs
+            if not workout_types:
+                st.warning("Please select at least one workout type (choose 'none' if you do not exercise).")
+                return
+
+            # Join multi-select list to a single string for substring matching
+            workout_str = ", ".join(workout_types)
+
+            # Build user_data with short form keys expected by model_loader.py
             user_data = {
-                'gender': gender,
-                'height': height,
-                'weight': weight,
-                'step_count': step_count,
-                'exercise_days': exercise_days,
-                'workout_duration': workout_duration,
-                'workout_type': workout_type,
-                'sleep_hours': sleep_hours,
-                'screen_time': screen_time,
-                'sitting_time': sitting_time,
-                'alcohol': alcohol,
-                'smoke': smoke,
-                'stress_level': stress_level,
-                'junk_food': junk_food,
-                'water_intake': water_intake,
-                'fruit_veg': fruit_veg,
-                'calories': calories,
-                'protein_level': protein_level,
-                'food_order_freq': food_order_freq,
-                'energetic': energetic,
-                'fatigue': fatigue,
-                'fitness_rating': fitness_rating,
-                'timestamp': datetime.now().isoformat()
+                "gender"          : gender,
+                "height"          : HEIGHT_MID.get(height_bucket, 170),  # int cm midpoint
+                "weight"          : WEIGHT_MID.get(weight_bucket, 70),   # int kg midpoint
+                "step_count"      : step_count,
+                "exercise_days"   : exercise_days,
+                "workout_duration": workout_duration,
+                "workout_type"    : workout_str,
+                "sleep_hours"     : sleep_hours,
+                "screen_time"     : screen_time,
+                "sitting_time"    : sitting_time,
+                "alcohol"         : alcohol,
+                "smoke"           : smoke,
+                "stress_level"    : stress_level,
+                "junk_food"       : junk_food,
+                "water_intake"    : water_intake,
+                "fruit_veg"       : fruit_veg,
+                "calories"        : calories,
+                "protein_level"   : protein_level,
+                "food_order_freq" : food_order_freq,
+                "energetic"       : energetic,
+                "fatigue"         : fatigue,
+                "fitness_rating"  : fitness_rating,
             }
-            
-            # Store in session state
+
             st.session_state.user_inputs = user_data
-            
-            # Make prediction
-            with st.spinner('🔄 Analyzing your fitness profile...'):
+
+            with st.spinner("Analysing your fitness profile..."):
                 try:
-                    cluster, interpretation = predict_cluster(user_data)
-                    
-                    st.session_state.prediction_result = {
-                        'cluster': cluster,
-                        'interpretation': interpretation
-                    }
-                    
-                    # Navigate to results
-                    st.session_state.page = 'results'
+                    result = predict_cluster(user_data)
+                    st.session_state.prediction_result = result
+                    st.session_state.page = "results"
                     st.rerun()
-                    
-                except Exception as e:
-                    st.error(f"⚠️ Error making prediction: {str(e)}")
-                    st.info("Please check that all inputs are valid and try again.")
-    
-    # Back button
-    st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("⬅️ Back to Home", use_container_width=True):
-            st.session_state.page = 'home'
+                except Exception as exc:
+                    st.error(f"Prediction error: {exc}")
+                    st.info("Ensure all fields are filled correctly and try again.")
+
+    # Back navigation (outside form)
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    _, mid, _ = st.columns([1, 2, 1])
+    with mid:
+        if st.button("Back to Home", use_container_width=True):
+            st.session_state.page = "home"
             st.rerun()
-    
-    # Footer
-    st.markdown("""
-    <div class="footer">
-        Developed by Akshat <span>❤️</span>
-    </div>
-    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="footer">Developed by Akshat 🩵</div>', unsafe_allow_html=True)
